@@ -11,7 +11,7 @@ A Streamlit application for predicting customer churn using Machine Learning. Th
 
 ## Project Overview
 
-This application uses a Random Forest classifier to predict customer churn probability based on various customer attributes including demographics, service subscriptions, and billing information. The model is trained on the publicly available Telco Customer Churn dataset and achieves approximately 76% accuracy with 84% ROC AUC.
+This application uses a Random Forest classifier to predict customer churn probability based on various customer attributes including demographics, service subscriptions, and billing information. The model is trained on the Genthropic Customer Churn dataset and achieves approximately 76% accuracy with 84% ROC AUC.
 
 ### Key Features
 
@@ -44,7 +44,7 @@ customer_churn_prediction/
 │   └── model_trainer.py        # Model training module
 │
 ├── data/                       # Dataset directory
-│   └── telco_churn.csv         # Customer churn dataset
+│   └── genthropic_churn.csv    # Customer churn dataset
 │
 └── models/                     # Trained models directory
     ├── churn_model.pkl         # Trained Random Forest model

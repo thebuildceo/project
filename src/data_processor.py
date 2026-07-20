@@ -2,7 +2,7 @@
 Data Processor Module for Customer Churn Prediction
 
 This module handles data loading, preprocessing, and feature engineering
-for the Telco Customer Churn dataset.
+for the Genthropic Customer Churn dataset.
 """
 
 import pandas as pd
