@@ -21,7 +21,7 @@ def train_and_save_model():
     
     # Load data
     print("Loading dataset...")
-    data_path = "data/telco_churn.csv"
+    data_path = "data/genthropic_churn.csv"
     
     if not os.path.exists(data_path):
         print("Dataset not found. Please run download_data.py first.")

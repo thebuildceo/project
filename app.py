@@ -105,7 +105,7 @@ def load_dataset():
     Returns:
         pd.DataFrame: Loaded dataset
     """
-    data_path = "data/telco_churn.csv"
+    data_path = "data/genthropic_churn.csv"
     
     if not os.path.exists(data_path):
         return None
@@ -123,7 +123,7 @@ def display_sidebar():
         # Navigation
         page = st.radio(
             "Navigate to:",
-            ["🏠 Home", "📊 Data Analysis", "🔮 Predict Churn", "� Batch Prediction", "🎯 Customer Segments", "� Model Insights"],
+            ["🏠 Home", "📊 Data Analysis", "🔮 Predict Churn", "📁 Batch Prediction", "🎯 Customer Segments", "💰 Customer Value", "� Churn Trends", "🎯 Retention Simulator", "� Model Insights"],
             label_visibility="collapsed"
         )
         
@@ -136,7 +136,7 @@ def display_sidebar():
         based on various customer attributes and usage patterns.
         
         **Model:** Random Forest Classifier
-        **Dataset:** Telco Customer Churn
+        **Dataset:** Genthropic Customer Churn
         """)
         
         st.markdown("---")
@@ -793,6 +793,377 @@ def customer_segments_page(trainer, processor):
     """)
 
 
+def customer_value_page(trainer, processor):
+    """Display the customer lifetime value analysis page."""
+    st.markdown('<h1 class="main-header">💰 Customer Value Analysis</h1>', 
+                unsafe_allow_html=True)
+    
+    st.markdown("""
+    Analyze customer lifetime value (CLV) and identify high-value customers
+    who are most important to retain for Genthropic.
+    """)
+    
+    # Load dataset
+    df = load_dataset()
+    
+    if df is None:
+        st.error("Dataset not found. Please run download_data.py first.")
+        return
+    
+    # Calculate CLV
+    df['CLV'] = df['MonthlyCharges'] * df['tenure']
+    df['Monthly_CLV'] = df['MonthlyCharges'] * 12  # Annual value
+    
+    # Get predictions for risk assessment
+    df_processed = processor.preprocess(df.copy(), fit=False, encode_target=False)
+    predictions, probabilities = trainer.predict(df_processed)
+    df['Churn_Probability'] = probabilities
+    df['Risk_Category'] = df['Churn_Probability'].apply(lambda x: 
+        'High Risk' if x >= 0.7 else
+        'Medium Risk' if x >= 0.4 else
+        'Low Risk'
+    )
+    
+    # Customer segments based on CLV and risk
+    st.subheader("Customer Value-Risk Matrix")
+    
+    df['Value_Segment'] = pd.qcut(df['CLV'], q=3, labels=['Low Value', 'Medium Value', 'High Value'])
+    
+    # Create matrix
+    matrix_data = df.groupby(['Value_Segment', 'Risk_Category']).size().unstack(fill_value=0)
+    
+    fig_matrix = px.imshow(
+        matrix_data,
+        title="Customer Value vs Risk Matrix",
+        color_continuous_scale='RdYlGn_r',
+        text_auto=True
+    )
+    st.plotly_chart(fig_matrix, width='stretch')
+    
+    # High-value high-risk customers (most critical)
+    st.markdown("---")
+    st.subheader("Critical Customers: High Value + High Risk")
+    
+    critical_customers = df[(df['Value_Segment'] == 'High Value') & (df['Risk_Category'] == 'High Risk')]
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Critical Customers", len(critical_customers))
+    with col2:
+        st.metric("Total at Risk", f"${critical_customers['CLV'].sum():,.0f}")
+    with col3:
+        st.metric("Avg Monthly", f"${critical_customers['MonthlyCharges'].mean():.2f}")
+    
+    # CLV distribution
+    st.subheader("Customer Lifetime Value Distribution")
+    
+    fig_clv = px.histogram(
+        df, x='CLV',
+        title="Distribution of Customer Lifetime Value",
+        nbins=50,
+        color='Risk_Category',
+        color_discrete_map={
+            'High Risk': '#ff6b6b',
+            'Medium Risk': '#ffd93d',
+            'Low Risk': '#51cf66'
+        }
+    )
+    st.plotly_chart(fig_clv, width='stretch')
+    
+    # Top customers by value
+    st.subheader("Top 20 Customers by Lifetime Value")
+    
+    top_customers = df.nlargest(20, 'CLV')[['customerID', 'CLV', 'MonthlyCharges', 'tenure', 'Risk_Category']] if 'customerID' in df.columns else df.nlargest(20, 'CLV')[['CLV', 'MonthlyCharges', 'tenure', 'Risk_Category']]
+    
+    st.dataframe(top_customers, width='stretch')
+    
+    # Value-based recommendations
+    st.markdown("---")
+    st.subheader("Value-Based Retention Strategy")
+    
+    st.markdown("""
+    **High Value Customers**:
+    - Assign dedicated account managers
+    - Offer exclusive benefits and priority support
+    - Create personalized retention plans
+    - Monitor usage patterns closely
+    
+    **Medium Value Customers**:
+    - Provide proactive customer service
+    - Offer upgrade incentives
+    - Send targeted communications
+    - Encourage longer contracts
+    
+    **Low Value Customers**:
+    - Focus on cost-effective retention
+    - Automated engagement campaigns
+    - Self-service options
+    - Basic support channels
+    """)
+
+
+def churn_trends_page(trainer, processor):
+    """Display the churn trend analysis page."""
+    st.markdown('<h1 class="main-header">📉 Churn Trends Analysis</h1>', 
+                unsafe_allow_html=True)
+    
+    st.markdown("""
+    Analyze churn trends across different customer segments and time periods
+    to identify patterns and proactively address churn at Genthropic.
+    """)
+    
+    # Load dataset
+    df = load_dataset()
+    
+    if df is None:
+        st.error("Dataset not found. Please run download_data.py first.")
+        return
+    
+    # Get predictions
+    df_processed = processor.preprocess(df.copy(), fit=False, encode_target=False)
+    predictions, probabilities = trainer.predict(df_processed)
+    df['Churn_Probability'] = probabilities
+    df['Predicted_Churn'] = predictions
+    
+    # Churn by tenure groups
+    st.subheader("Churn Rate by Tenure Groups")
+    
+    df['Tenure_Group'] = pd.cut(
+        df['tenure'],
+        bins=[0, 12, 24, 36, 48, 60, 72],
+        labels=['0-12', '13-24', '25-36', '37-48', '49-60', '61-72']
+    )
+    
+    churn_by_tenure = df.groupby('Tenure_Group')['Predicted_Churn'].mean() * 100
+    
+    fig_tenure_trend = px.line(
+        x=churn_by_tenure.index,
+        y=churn_by_tenure.values,
+        title="Churn Rate by Tenure Group",
+        markers=True,
+        labels={'x': 'Tenure (months)', 'y': 'Churn Rate (%)'}
+    )
+    fig_tenure_trend.update_traces(line_color='#ff6b6b', marker_size=10)
+    st.plotly_chart(fig_tenure_trend, width='stretch')
+    
+    # Churn by monthly charges
+    st.subheader("Churn Rate by Monthly Charges")
+    
+    df['Charges_Group'] = pd.cut(
+        df['MonthlyCharges'],
+        bins=[0, 30, 60, 90, 120, 150],
+        labels=['$0-30', '$31-60', '$61-90', '$91-120', '$121+']
+    )
+    
+    churn_by_charges = df.groupby('Charges_Group')['Predicted_Churn'].mean() * 100
+    
+    fig_charges_trend = px.bar(
+        x=churn_by_charges.index,
+        y=churn_by_charges.values,
+        title="Churn Rate by Monthly Charges",
+        labels={'x': 'Monthly Charges', 'y': 'Churn Rate (%)'}
+    )
+    fig_charges_trend.update_traces(marker_color='#ff6b6b')
+    st.plotly_chart(fig_charges_trend, width='stretch')
+    
+    # Churn by service combinations
+    st.subheader("Churn Rate by Service Combinations")
+    
+    df['Has_Internet'] = df['InternetService'] != 'No'
+    df['Has_Support'] = df['TechSupport'] == 'Yes'
+    
+    service_churn = df.groupby(['Has_Internet', 'Has_Support'])['Predicted_Churn'].mean() * 100
+    service_churn = service_churn.unstack()
+    
+    fig_service = px.bar(
+        service_churn,
+        barmode='group',
+        title="Churn Rate by Internet and Tech Support",
+        labels={'value': 'Churn Rate (%)', 'variable': 'Has Tech Support'}
+    )
+    st.plotly_chart(fig_service, width='stretch')
+    
+    # Key insights
+    st.markdown("---")
+    st.subheader("Key Trend Insights")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        highest_tenure_churn = churn_by_tenure.idxmax()
+        st.metric("Highest Churn Tenure", f"{highest_tenure_churn} months")
+    
+    with col2:
+        highest_charge_churn = churn_by_charges.idxmax()
+        st.metric("Highest Churn Charges", highest_charge_churn)
+    
+    st.markdown("""
+    **Trend Analysis**:
+    - New customers (0-12 months) show highest churn rates
+    - Higher monthly charges correlate with increased churn
+    - Customers without tech support are more likely to churn
+    - Internet service availability impacts churn significantly
+    """)
+
+
+def retention_simulator_page(trainer, processor):
+    """Display the retention campaign simulator page."""
+    st.markdown('<h1 class="main-header">🎯 Retention Campaign Simulator</h1>', 
+                unsafe_allow_html=True)
+    
+    st.markdown("""
+    Simulate the impact of different retention strategies on Genthropic's
+    customer churn rate and revenue.
+    """)
+    
+    # Load dataset
+    df = load_dataset()
+    
+    if df is None:
+        st.error("Dataset not found. Please run download_data.py first.")
+        return
+    
+    # Get predictions
+    df_processed = processor.preprocess(df.copy(), fit=False, encode_target=False)
+    predictions, probabilities = trainer.predict(df_processed)
+    df['Churn_Probability'] = probabilities
+    df['Predicted_Churn'] = predictions
+    
+    # Campaign settings
+    st.subheader("Campaign Parameters")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        target_segment = st.selectbox(
+            "Target Segment",
+            ["High Risk", "Medium Risk", "All Customers"]
+        )
+    
+    with col2:
+        discount_percent = st.slider(
+            "Discount Offered (%)",
+            0, 50, 15
+        )
+    
+    with col3:
+        campaign_budget = st.number_input(
+            "Campaign Budget ($)",
+            1000, 100000, 10000
+        )
+    
+    # Effectiveness assumptions
+    st.subheader("Effectiveness Assumptions")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        high_risk_reduction = st.slider(
+            "High Risk Churn Reduction (%)",
+            0, 50, 25
+        )
+    
+    with col2:
+        medium_risk_reduction = st.slider(
+            "Medium Risk Churn Reduction (%)",
+            0, 50, 40
+        )
+    
+    # Calculate baseline
+    baseline_churn = df['Predicted_Churn'].mean() * 100
+    baseline_revenue = df['MonthlyCharges'].sum()
+    
+    # Apply campaign effects
+    df_sim = df.copy()
+    
+    if target_segment == "High Risk":
+        df_sim['Risk_Category'] = df_sim['Churn_Probability'].apply(lambda x: 
+            'High Risk' if x >= 0.7 else 'Medium Risk' if x >= 0.4 else 'Low Risk'
+        )
+        high_risk_mask = df_sim['Risk_Category'] == 'High Risk'
+        df_sim.loc[high_risk_mask, 'Churn_Probability'] *= (1 - high_risk_reduction / 100)
+    elif target_segment == "Medium Risk":
+        df_sim['Risk_Category'] = df_sim['Churn_Probability'].apply(lambda x: 
+            'High Risk' if x >= 0.7 else 'Medium Risk' if x >= 0.4 else 'Low Risk'
+        )
+        medium_risk_mask = df_sim['Risk_Category'] == 'Medium Risk'
+        df_sim.loc[medium_risk_mask, 'Churn_Probability'] *= (1 - medium_risk_reduction / 100)
+    else:
+        df_sim['Churn_Probability'] *= (1 - (high_risk_reduction + medium_risk_reduction) / 200)
+    
+    # Calculate new churn
+    new_churn_rate = df_sim['Churn_Probability'].mean() * 100
+    churn_reduction = baseline_churn - new_churn_rate
+    
+    # Calculate revenue impact
+    customers_saved = int((churn_reduction / 100) * len(df))
+    avg_monthly_revenue = df['MonthlyCharges'].mean()
+    revenue_saved = customers_saved * avg_monthly_revenue * 12  # Annual
+    
+    # ROI calculation
+    roi = ((revenue_saved - campaign_budget) / campaign_budget) * 100 if campaign_budget > 0 else 0
+    
+    # Display results
+    st.markdown("---")
+    st.subheader("Simulation Results")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Baseline Churn", f"{baseline_churn:.1f}%")
+    with col2:
+        st.metric("New Churn Rate", f"{new_churn_rate:.1f}%", f"-{churn_reduction:.1f}%", delta_color="inverse")
+    with col3:
+        st.metric("Customers Saved", customers_saved)
+    with col4:
+        st.metric("Revenue Saved", f"${revenue_saved:,.0f}")
+    
+    # Financial summary
+    st.subheader("Financial Impact")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.metric("Campaign Cost", f"${campaign_budget:,.0f}")
+    with col2:
+        st.metric("ROI", f"{roi:.1f}%", delta_color="normal" if roi > 0 else "inverse")
+    
+    # Visualization
+    st.subheader("Churn Rate Comparison")
+    
+    fig_comparison = px.bar(
+        x=['Baseline', 'With Campaign'],
+        y=[baseline_churn, new_churn_rate],
+        title="Churn Rate: Before vs After Campaign",
+        color=['Baseline', 'With Campaign'],
+        color_discrete_map={'Baseline': '#ff6b6b', 'With Campaign': '#51cf66'}
+    )
+    st.plotly_chart(fig_comparison, width='stretch')
+    
+    # Recommendations
+    st.markdown("---")
+    st.subheader("Campaign Recommendations")
+    
+    if roi > 50:
+        st.success(f"Excellent ROI of {roi:.1f}%! This campaign is highly recommended.")
+    elif roi > 20:
+        st.info(f"Good ROI of {roi:.1f}%. Consider proceeding with this campaign.")
+    elif roi > 0:
+        st.warning(f"Positive but low ROI of {roi:.1f}%. Consider optimizing parameters.")
+    else:
+        st.error(f"Negative ROI of {roi:.1f}%. Campaign parameters need adjustment.")
+    
+    st.markdown(f"""
+    **Campaign Summary**:
+    - Target: {target_segment}
+    - Discount: {discount_percent}%
+    - Budget: ${campaign_budget:,.0f}
+    - Expected Customers Saved: {customers_saved}
+    - Annual Revenue Protected: ${revenue_saved:,.0f}
+    """)
+
+
 def main():
     """Main application function."""
     # Load model and processor
@@ -821,7 +1192,22 @@ def main():
             st.error("Model not loaded. Please train the model first.")
         else:
             customer_segments_page(trainer, processor)
-    elif page == "📈 Model Insights":
+    elif page == "💰 Customer Value":
+        if trainer is None or processor is None:
+            st.error("Model not loaded. Please train the model first.")
+        else:
+            customer_value_page(trainer, processor)
+    elif page == "� Churn Trends":
+        if trainer is None or processor is None:
+            st.error("Model not loaded. Please train the model first.")
+        else:
+            churn_trends_page(trainer, processor)
+    elif page == "🎯 Retention Simulator":
+        if trainer is None or processor is None:
+            st.error("Model not loaded. Please train the model first.")
+        else:
+            retention_simulator_page(trainer, processor)
+    elif page == "�📈 Model Insights":
         if trainer is None:
             st.error("Model not loaded. Please train the model first.")
         else:

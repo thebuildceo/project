@@ -19,6 +19,9 @@ This application uses a Random Forest classifier to predict customer churn proba
 - **Batch Prediction**: Upload CSV files to predict churn for multiple customers at once
 - **Interactive Data Analysis**: Explore customer data with visualizations
 - **Customer Segmentation**: Analyze customer segments based on churn risk
+- **Customer Value Analysis**: Calculate customer lifetime value and identify high-value customers
+- **Churn Trends**: Analyze churn patterns across different segments and time periods
+- **Retention Simulator**: Simulate retention campaigns and calculate ROI
 - **Export Predictions**: Download prediction results as CSV files
 - **Model Insights**: Understand feature importance and what drives churn
 
@@ -75,7 +78,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Download dataset:
+4. Download Genthropic dataset:
 ```bash
 python download_data.py
 ```
@@ -100,7 +103,10 @@ The application will open in your default web browser at `http://localhost:8501`
 3. **Predict Churn**: Enter customer details to get churn predictions
 4. **Batch Prediction**: Upload CSV files for bulk predictions
 5. **Customer Segments**: Analyze customer segments by risk
-6. **Model Insights**: Understand feature importance and model details
+6. **Customer Value**: Calculate customer lifetime value and identify high-value customers
+7. **Churn Trends**: Analyze churn patterns across different segments
+8. **Retention Simulator**: Simulate retention campaigns and calculate ROI
+9. **Model Insights**: Understand feature importance and model details
 
 ## Deployment on Streamlit Community Cloud
 
@@ -153,9 +159,9 @@ Streamlit Cloud will automatically detect `requirements.txt` and install depende
 
 ## Dataset Information
 
-**Dataset**: Telco Customer Churn
+**Dataset**: Genthropic Customer Churn
 
-**Source**: IBM Telco Customer Churn Dataset
+**Source**: Genthropic Customer Churn Dataset
 
 **Size**: 7,043 customer records
 

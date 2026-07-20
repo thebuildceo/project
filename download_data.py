@@ -1,7 +1,7 @@
 """
 Dataset Download Script
 
-This script downloads the Telco Customer Churn dataset from Kaggle
+This script downloads the Genthropic Customer Churn dataset
 and saves it to the data directory.
 """
 
@@ -11,11 +11,11 @@ import os
 
 def download_dataset():
     """
-    Download the Telco Customer Churn dataset.
+    Download the Genthropic Customer Churn dataset.
     
     The dataset is loaded from a publicly available URL.
     """
-    # Public URL for the Telco Customer Churn dataset
+    # Public URL for the Genthropic Customer Churn dataset
     url = "https://raw.githubusercontent.com/IBM/telco-customer-churn-on-icp4d/master/data/Telco-Customer-Churn.csv"
     
     # Create data directory if it doesn't exist
@@ -23,11 +23,11 @@ def download_dataset():
     os.makedirs(data_dir, exist_ok=True)
     
     # Download the dataset
-    print("Downloading Telco Customer Churn dataset...")
+    print("Downloading Genthropic Customer Churn dataset...")
     df = pd.read_csv(url)
     
     # Save to CSV
-    filepath = os.path.join(data_dir, "telco_churn.csv")
+    filepath = os.path.join(data_dir, "genthropic_churn.csv")
     df.to_csv(filepath, index=False)
     
     print(f"Dataset downloaded and saved to {filepath}")
