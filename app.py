@@ -123,7 +123,7 @@ def display_sidebar():
         # Navigation
         page = st.radio(
             "Navigate to:",
-            ["🏠 Home", "📊 Data Analysis", "🔮 Predict Churn", "📈 Model Insights"],
+            ["🏠 Home", "📊 Data Analysis", "🔮 Predict Churn", "� Batch Prediction", "🎯 Customer Segments", "� Model Insights"],
             label_visibility="collapsed"
         )
         
@@ -559,6 +559,240 @@ def model_insights_page(trainer):
     """)
 
 
+def batch_prediction_page(trainer, processor):
+    """Display the batch prediction page for CSV upload."""
+    st.markdown('<h1 class="main-header">📁 Batch Prediction</h1>', 
+                unsafe_allow_html=True)
+    
+    st.markdown("""
+    Upload a CSV file with customer data to predict churn for multiple customers at once.
+    The CSV file should have the same columns as the training dataset.
+    """)
+    
+    # File upload
+    uploaded_file = st.file_uploader(
+        "Upload CSV file",
+        type=['csv'],
+        help="Upload a CSV file with customer data"
+    )
+    
+    if uploaded_file is not None:
+        try:
+            # Read the uploaded file
+            df = pd.read_csv(uploaded_file)
+            
+            st.subheader("Uploaded Data Preview")
+            st.dataframe(df.head(10), width='stretch')
+            st.info(f"Total records: {len(df)}")
+            
+            # Preprocess the data
+            with st.spinner("Processing data and making predictions..."):
+                df_processed = processor.preprocess(df.copy(), fit=False, encode_target=False)
+                
+                # Make predictions
+                predictions, probabilities = trainer.predict(df_processed)
+                
+                # Add predictions to original dataframe
+                df['Churn_Prediction'] = ['Yes' if p == 1 else 'No' for p in predictions]
+                df['Churn_Probability'] = [f"{prob * 100:.2f}%" for prob in probabilities]
+                df['Risk_Category'] = df['Churn_Probability'].apply(lambda x: 
+                    'High Risk' if float(x.rstrip('%')) >= 70 else
+                    'Medium Risk' if float(x.rstrip('%')) >= 40 else
+                    'Low Risk'
+                )
+            
+            # Display results
+            st.markdown("---")
+            st.subheader("Prediction Results")
+            
+            # Summary statistics
+            col1, col2, col3 = st.columns(3)
+            
+            high_risk = (df['Risk_Category'] == 'High Risk').sum()
+            medium_risk = (df['Risk_Category'] == 'Medium Risk').sum()
+            low_risk = (df['Risk_Category'] == 'Low Risk').sum()
+            
+            with col1:
+                st.metric("High Risk", high_risk, delta_color="inverse")
+            with col2:
+                st.metric("Medium Risk", medium_risk)
+            with col3:
+                st.metric("Low Risk", low_risk, delta_color="normal")
+            
+            # Risk distribution chart
+            st.subheader("Risk Distribution")
+            risk_counts = df['Risk_Category'].value_counts()
+            
+            fig_risk = px.pie(
+                values=risk_counts.values,
+                names=risk_counts.index,
+                title="Customer Risk Distribution",
+                color_discrete_map={
+                    'High Risk': '#ff6b6b',
+                    'Medium Risk': '#ffd93d',
+                    'Low Risk': '#51cf66'
+                }
+            )
+            fig_risk.update_traces(textposition='inside', textinfo='percent+label')
+            st.plotly_chart(fig_risk, width='stretch')
+            
+            # Display results table
+            st.subheader("Detailed Results")
+            result_columns = ['customerID'] if 'customerID' in df.columns else []
+            result_columns.extend([col for col in df.columns if col in ['Churn_Prediction', 'Churn_Probability', 'Risk_Category']])
+            
+            if 'customerID' in df.columns:
+                display_df = df[['customerID', 'Churn_Prediction', 'Churn_Probability', 'Risk_Category']]
+            else:
+                display_df = df[['Churn_Prediction', 'Churn_Probability', 'Risk_Category']]
+            
+            st.dataframe(display_df, width='stretch')
+            
+            # Export functionality
+            st.markdown("---")
+            st.subheader("Export Results")
+            
+            csv = df.to_csv(index=False)
+            st.download_button(
+                label="Download Predictions as CSV",
+                data=csv,
+                file_name='churn_predictions.csv',
+                mime='text/csv',
+                use_container_width=True
+            )
+            
+        except Exception as e:
+            st.error(f"Error processing file: {str(e)}")
+            st.info("Please ensure your CSV file has the same columns as the training dataset.")
+
+
+def customer_segments_page(trainer, processor):
+    """Display the customer segmentation analysis page."""
+    st.markdown('<h1 class="main-header">🎯 Customer Segments</h1>', 
+                unsafe_allow_html=True)
+    
+    st.markdown("""
+    Analyze customer segments based on churn risk and key characteristics.
+    This helps identify high-value customer groups that need attention.
+    """)
+    
+    # Load dataset
+    df = load_dataset()
+    
+    if df is None:
+        st.error("Dataset not found. Please run download_data.py first.")
+        return
+    
+    # Preprocess and get predictions
+    with st.spinner("Analyzing customer segments..."):
+        df_processed = processor.preprocess(df.copy(), fit=False, encode_target=False)
+        predictions, probabilities = trainer.predict(df_processed)
+        
+        df['Churn_Probability'] = probabilities
+        df['Risk_Category'] = df['Churn_Probability'].apply(lambda x: 
+            'High Risk' if x >= 0.7 else
+            'Medium Risk' if x >= 0.4 else
+            'Low Risk'
+        )
+    
+    # Segment by contract type
+    st.subheader("Segments by Contract Type")
+    
+    contract_risk = df.groupby(['Contract', 'Risk_Category']).size().unstack(fill_value=0)
+    
+    fig_contract = px.bar(
+        contract_risk,
+        barmode='stack',
+        title="Churn Risk by Contract Type",
+        color_discrete_map={
+            'High Risk': '#ff6b6b',
+            'Medium Risk': '#ffd93d',
+            'Low Risk': '#51cf66'
+        }
+    )
+    st.plotly_chart(fig_contract, width='stretch')
+    
+    # Segment by internet service
+    st.subheader("Segments by Internet Service")
+    
+    internet_risk = df.groupby(['InternetService', 'Risk_Category']).size().unstack(fill_value=0)
+    
+    fig_internet = px.bar(
+        internet_risk,
+        barmode='stack',
+        title="Churn Risk by Internet Service",
+        color_discrete_map={
+            'High Risk': '#ff6b6b',
+            'Medium Risk': '#ffd93d',
+            'Low Risk': '#51cf66'
+        }
+    )
+    st.plotly_chart(fig_internet, width='stretch')
+    
+    # Segment by tenure groups
+    st.subheader("Segments by Tenure")
+    
+    df['Tenure_Group'] = pd.cut(
+        df['tenure'],
+        bins=[0, 12, 24, 48, 72],
+        labels=['0-12 months', '13-24 months', '25-48 months', '49-72 months']
+    )
+    
+    tenure_risk = df.groupby(['Tenure_Group', 'Risk_Category']).size().unstack(fill_value=0)
+    
+    fig_tenure = px.bar(
+        tenure_risk,
+        barmode='stack',
+        title="Churn Risk by Tenure Group",
+        color_discrete_map={
+            'High Risk': '#ff6b6b',
+            'Medium Risk': '#ffd93d',
+            'Low Risk': '#51cf66'
+        }
+    )
+    st.plotly_chart(fig_tenure, width='stretch')
+    
+    # High-risk customers analysis
+    st.markdown("---")
+    st.subheader("High-Risk Customer Analysis")
+    
+    high_risk_df = df[df['Risk_Category'] == 'High Risk'].copy()
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.metric("High-Risk Customers", len(high_risk_df))
+        st.metric("Avg Monthly Charges", f"${high_risk_df['MonthlyCharges'].mean():.2f}")
+    
+    with col2:
+        st.metric("Avg Tenure", f"{high_risk_df['tenure'].mean():.1f} months")
+        st.metric("Most Common Contract", high_risk_df['Contract'].mode()[0])
+    
+    # Recommendations by segment
+    st.markdown("---")
+    st.subheader("Segment-Specific Recommendations")
+    
+    st.markdown("""
+    **High-Risk Customers (Probability ≥ 70%)**:
+    - Immediate intervention required
+    - Offer retention incentives and discounts
+    - Personal outreach from customer success team
+    - Review pricing and contract terms
+    
+    **Medium-Risk Customers (Probability 40-69%)**:
+    - Proactive engagement needed
+    - Send targeted marketing campaigns
+    - Offer service upgrades or bundles
+    - Monitor usage patterns closely
+    
+    **Low-Risk Customers (Probability < 40%)**:
+    - Focus on retention and satisfaction
+    - Share new features and benefits
+    - Encourage referral programs
+    - Gather feedback for improvement
+    """)
+
+
 def main():
     """Main application function."""
     # Load model and processor
@@ -577,6 +811,16 @@ def main():
             st.error("Model not loaded. Please train the model first.")
         else:
             predict_churn_page(trainer, processor)
+    elif page == "📁 Batch Prediction":
+        if trainer is None or processor is None:
+            st.error("Model not loaded. Please train the model first.")
+        else:
+            batch_prediction_page(trainer, processor)
+    elif page == "🎯 Customer Segments":
+        if trainer is None or processor is None:
+            st.error("Model not loaded. Please train the model first.")
+        else:
+            customer_segments_page(trainer, processor)
     elif page == "📈 Model Insights":
         if trainer is None:
             st.error("Model not loaded. Please train the model first.")

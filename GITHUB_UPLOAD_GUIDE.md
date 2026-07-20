@@ -2,6 +2,8 @@
 
 This guide will help you upload the project to GitHub and deploy it on Streamlit Community Cloud.
 
+**Repository**: https://github.com/thebuildceo/project
+
 ## Step 1: Initialize Git Repository
 
 ```bash
@@ -21,34 +23,22 @@ git add .
 git commit -m "Initial commit: Customer Churn Prediction Dashboard"
 ```
 
-## Step 4: Create GitHub Repository
-
-1. Go to https://github.com
-2. Click the "+" icon and select "New repository"
-3. Repository name: `customer-churn-prediction`
-4. Description: "Customer Churn Prediction Dashboard using Machine Learning and Streamlit"
-5. Make it Public (required for Streamlit Cloud free tier)
-6. Do NOT initialize with README (we already have one)
-7. Click "Create repository"
-
-## Step 5: Link Local Repository to GitHub
+## Step 4: Link Local Repository to GitHub
 
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/customer-churn-prediction.git
+git remote add origin https://github.com/thebuildceo/project.git
 git branch -M main
 git push -u origin main
 ```
 
-Replace `YOUR_USERNAME` with your actual GitHub username.
-
-## Step 6: Deploy to Streamlit Community Cloud
+## Step 5: Deploy to Streamlit Community Cloud
 
 ### Option A: Automatic Deployment from GitHub
 
 1. Go to https://share.streamlit.io
 2. Sign up/login with your GitHub account
 3. Click "New app"
-4. Select your repository: `customer-churn-prediction`
+4. Select your repository: `thebuildceo/project`
 5. Select branch: `main`
 6. Main file path: `app.py`
 7. Click "Deploy"

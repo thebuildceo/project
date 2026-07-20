@@ -2,6 +2,8 @@
 
 A production-ready Streamlit application for predicting customer churn using Machine Learning. This project demonstrates a complete ML pipeline with data preprocessing, model training, and interactive web-based predictions.
 
+**Repository**: https://github.com/thebuildceo/project
+
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.28.0-red.svg)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3.2-orange.svg)
@@ -14,38 +16,13 @@ This application uses a Random Forest classifier to predict customer churn proba
 ### Key Features
 
 - **Real-time Prediction**: Get instant churn probability for individual customers
+- **Batch Prediction**: Upload CSV files to predict churn for multiple customers at once
 - **Interactive Data Analysis**: Explore customer data with beautiful visualizations
+- **Customer Segmentation**: Analyze customer segments based on churn risk
+- **Export Predictions**: Download prediction results as CSV files
 - **Model Insights**: Understand feature importance and what drives churn
 - **Production-Ready**: Clean, modular, and well-documented code
 - **Cloud Deployable**: Runs seamlessly on Streamlit Community Cloud
-
-## 📸 Screenshots
-
-### Home Page
-The home page provides an overview of the application with key metrics and navigation options.
-
-![Home Page](screenshots/home_page.png)
-*Dashboard overview with quick stats and feature highlights*
-
-### Data Analysis
-Explore the dataset with interactive charts showing churn distribution, feature distributions, and categorical analysis.
-
-![Data Analysis](screenshots/data_analysis.png)
-*Interactive data visualization with churn patterns*
-
-### Churn Prediction
-Enter customer details to get instant churn probability predictions with personalized recommendations.
-
-![Prediction](screenshots/prediction.png)
-*Real-time churn prediction with probability gauge*
-
-### Model Insights
-View feature importance to understand what factors influence churn the most.
-
-![Model Insights](screenshots/model_insights.png)
-*Feature importance analysis and model information*
-
-> **Note:** Screenshots need to be captured after running the application. See `screenshots/README.md` for instructions.
 
 ## 🏗️ Project Structure
 
