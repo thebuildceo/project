@@ -1,9 +1,0 @@
-# This directory is for application screenshots
-# To add screenshots:
-# 1. Run the application locally: streamlit run app.py
-# 2. Navigate to each page and take screenshots
-# 3. Save them as:
-#    - home_page.png
-#    - data_analysis.png
-#    - prediction.png
-#    - model_insights.png

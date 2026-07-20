@@ -37,14 +37,6 @@ ENV/
 # Streamlit
 .streamlit/
 
-# Data files (keep the directory structure but ignore large files)
-# For Streamlit Cloud deployment, we need these files, so don't ignore them
-# data/*.csv
-
-# Model files (keep the directory structure but ignore large files)
-# For Streamlit Cloud deployment, we need these files, so don't ignore them
-# models/*.pkl
-
 # Jupyter Notebook
 .ipynb_checkpoints
 
@@ -54,10 +46,6 @@ ENV/
 
 # Logs
 *.log
-
-# Screenshots (optional - comment out if you want to include them)
-# screenshots/*.png
-# screenshots/*.jpg
 
 # Testing
 .pytest_cache/
